@@ -59,6 +59,9 @@ dependencies {
     val lifecycle_version = "2.6.2"
     val appsflyer_version = "6.12.5"
 
+
+    //facebook SDK
+    implementation ("com.facebook.android:facebook-android-sdk:latest.release")
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     // When using the BoM, don't specify versions in Firebase dependencies

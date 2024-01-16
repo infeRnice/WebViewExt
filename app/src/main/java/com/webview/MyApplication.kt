@@ -4,18 +4,33 @@ import android.app.Application
 import android.content.Context
 import com.appsflyer.AppsFlyerConversionListener
 import com.appsflyer.AppsFlyerLib
+import com.webview.network.DeepLinkHandler
 
-class MyApplication: Application() {
+class MyApplication : Application() {
+
+    private lateinit var deepLinkHandler: DeepLinkHandler
 
     override fun onCreate() {
         super.onCreate()
+        deepLinkHandler = DeepLinkHandler(this)
+
         val appsFlyerConversionListener = object : AppsFlyerConversionListener {
             override fun onConversionDataSuccess(data: Map<String, Any>) {
-               val companyName = data["s1_s2_s3_s4_s5_s6"] as? String
+                val companyName = data["company_name"] as? String
                 val status = data["af_status"] as? String
+                val mediaSource = data["media_source"] as? String
+                val campaign = data["campaign"] as? String
 
-                // save companyName to shared preferences
-                saveCompanyName(companyName)
+                val isNonOrganic =
+                    status == "Non-organic" && (mediaSource == "Google" || mediaSource == "Facebook" || mediaSource == "Instagram" || mediaSource == "TikTok")
+
+                if (isNonOrganic) {
+                    //save status
+                    saveUserStatus("Non-organic")
+                } else {
+                    //organic user logic
+                    saveUserStatus("Organic")
+                }
             }
 
             override fun onConversionDataFail(errorMessage: String) {
@@ -26,18 +41,12 @@ class MyApplication: Application() {
                 // Данные при открытии приложения
                 val deepLink = data["deeplink_value"]
                 //link processing
-                handleDeeplink(deepLink)
+                deepLinkHandler.handleDeeplink(deepLink)
             }
 
             override fun onAttributionFailure(errorMessage: String) {
                 // Ошибка атрибуции
 
-            }
-
-            private fun handleDeeplink(deepLink: String?) {
-                deepLink?.let {
-                    //processing logic
-                }
             }
         }
         AppsFlyerLib.getInstance().setDebugLog(true)
@@ -45,10 +54,20 @@ class MyApplication: Application() {
         AppsFlyerLib.getInstance().start(this)
     }
 
+    private fun saveUserStatus(status: String?) {
+        status?.let {
+            val sharedPref = getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                putString("user_status", status)
+                apply()
+            }
+        }
+    }
+
     private fun saveCompanyName(companyName: String?) {
         companyName?.let {
             val sharedPref = getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE)
-            with (sharedPref.edit()) {
+            with(sharedPref.edit()) {
                 putString("s1_s2_s3_s4_s5_s6", companyName)
                 apply()
             }
